@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `avatar` varchar(40) DEFAULT NULL;
