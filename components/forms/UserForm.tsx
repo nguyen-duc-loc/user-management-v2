@@ -181,7 +181,7 @@ const UserForm = ({
               {deleting ? "Deleting" : "Delete"} user
             </Button>
           )}
-          <div className="[420px]:ml-auto">
+          <div className="min-[420px]:ml-auto">
             <Button type="button" variant="outline" className="mr-4" asChild>
               <Link href="/">
                 <CornerUpLeft />

@@ -128,7 +128,7 @@ const AvatarForm = ({ user, onSubmit, onDelete, className }: AvatarProps) => {
             {deleting ? <LoaderCircle className="animate-spin" /> : <Trash2 />}
             {deleting ? "Deleting" : "Delete"} avatar
           </Button>
-          <div className="[420px]:ml-auto">
+          <div>
             <Button type="button" variant="outline" className="mr-4" asChild>
               <Link href="/">
                 <CornerUpLeft />
