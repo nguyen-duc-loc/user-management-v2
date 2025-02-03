@@ -62,7 +62,7 @@ const Page = async () => {
               <FolderOpen className="text-yellow-500" />
               <div>
                 <span className="font-semibold">Size: </span>
-                {Math.ceil(Size / 1024)}KB
+                {(Size / 1024).toFixed(1)}KB
               </div>
             </li>
             <li className="flex items-center gap-2">
