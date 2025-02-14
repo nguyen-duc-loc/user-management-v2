@@ -1,10 +1,11 @@
-import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { format } from "date-fns";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
+import { avatarStorageS3 } from "@/lib/aws_s3";
+import { cloudProvider } from "@/lib/cloud_provider";
+import { avatarStorageGCS } from "@/lib/gcp_storage";
 import dbConnect from "@/lib/mysql";
-import { getImgUrlFromKey, s3 } from "@/lib/s3";
 import { UserSchema } from "@/lib/schema";
 
 export async function GET(
@@ -45,7 +46,13 @@ export async function GET(
     }
 
     const user = (userResult as User[])[0];
-    user.avatar = await getImgUrlFromKey(user.avatar);
+    const avatarStorage =
+      cloudProvider === "aws" ? avatarStorageS3 : avatarStorageGCS;
+    const bucketName =
+      cloudProvider === "aws"
+        ? process.env.AWS_BUCKET_NAME!
+        : process.env.GCP_BUCKET_NAME!;
+    user.avatar = await avatarStorage.getUrlByKey(bucketName, user.avatar);
 
     return NextResponse.json(
       {
@@ -185,12 +192,13 @@ export async function DELETE(
     const user = (userResult as User[])[0];
 
     if (user.avatar) {
-      const command = new DeleteObjectCommand({
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: user.avatar,
-      });
-
-      await s3.send(command);
+      const avatarStorage =
+        cloudProvider === "aws" ? avatarStorageS3 : avatarStorageGCS;
+      const bucketName =
+        cloudProvider === "aws"
+          ? process.env.AWS_BUCKET_NAME!
+          : process.env.GCP_BUCKET_NAME!;
+      await avatarStorage.deleteByKey(bucketName, user.avatar);
     }
 
     await connection.execute(`DELETE FROM users WHERE id = ?`, [id]);

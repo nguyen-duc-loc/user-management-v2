@@ -7,10 +7,12 @@ type User = {
   avatar: string | null;
 };
 
-type AvatarObject = {
+type StorageObject = {
   Url: string;
   Key: string;
   LastModified: Date;
   Size: number;
   StorageClass: string;
 };
+
+type CloudProvider = "aws" | "gcp";

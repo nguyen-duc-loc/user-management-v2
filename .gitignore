@@ -35,6 +35,9 @@ yarn-error.log*
 .env*
 !.env.example
 
+# Cloud key
+*_key.json
+
 # vscode
 .vscode
 

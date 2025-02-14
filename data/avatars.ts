@@ -1,7 +1,7 @@
 export const getAvatars = async (): Promise<{
   bucketName: string;
   numberOfObjects: number;
-  objects: AvatarObject[];
+  objects: StorageObject[];
 } | null> => {
   const response = await fetch(`${process.env.BACKEND_URL}/api/avatars`);
 
@@ -10,7 +10,7 @@ export const getAvatars = async (): Promise<{
     data: {
       bucketName: string;
       numberOfObjects: number;
-      objects: AvatarObject[];
+      objects: StorageObject[];
     } | null;
   } = await response.json();
 

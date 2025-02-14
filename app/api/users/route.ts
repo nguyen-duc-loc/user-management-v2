@@ -2,8 +2,10 @@ import { format } from "date-fns";
 import { NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
 
+import { avatarStorageS3 } from "@/lib/aws_s3";
+import { cloudProvider } from "@/lib/cloud_provider";
+import { avatarStorageGCS } from "@/lib/gcp_storage";
 import dbConnect from "@/lib/mysql";
-import { getImgUrlFromKey } from "@/lib/s3";
 import { UserSchema } from "@/lib/schema";
 
 export async function GET(request: NextRequest) {
@@ -24,9 +26,14 @@ export async function GET(request: NextRequest) {
     );
 
     const users = usersResult as User[];
-
+    const avatarStorage =
+      cloudProvider === "aws" ? avatarStorageS3 : avatarStorageGCS;
+    const bucketName =
+      cloudProvider === "aws"
+        ? process.env.AWS_BUCKET_NAME!
+        : process.env.GCP_BUCKET_NAME!;
     const avatarUrls = await Promise.all(
-      users.map((user) => getImgUrlFromKey(user.avatar))
+      users.map((user) => avatarStorage.getUrlByKey(bucketName, user.avatar))
     );
 
     for (let i = 0; i < users.length; i++) {

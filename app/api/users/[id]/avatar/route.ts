@@ -1,10 +1,11 @@
-import { DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { NextResponse } from "next/server";
 import { v4 as uuid } from "uuid";
 import { ZodError } from "zod";
 
+import { avatarStorageS3 } from "@/lib/aws_s3";
+import { cloudProvider } from "@/lib/cloud_provider";
+import { avatarStorageGCS } from "@/lib/gcp_storage";
 import dbConnect from "@/lib/mysql";
-import { getImgUrlFromKey, s3 } from "@/lib/s3";
 import { AvatarSchema } from "@/lib/schema";
 
 export async function PUT(
@@ -65,28 +66,22 @@ export async function PUT(
     }
 
     const currentAvatar = (userResult as User[])[0].avatar;
-
-    let s3Key;
-
+    let key;
     if (!currentAvatar) {
-      s3Key = uuid();
+      key = uuid();
     } else {
-      s3Key = currentAvatar;
+      key = currentAvatar;
     }
-
-    const buffer = Buffer.from(await newAvatar.arrayBuffer());
-
-    const command = new PutObjectCommand({
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key: s3Key,
-      Body: buffer,
-      ContentType: newAvatar.type,
-    });
-
-    await s3.send(command);
+    const avatarStorage =
+      cloudProvider === "aws" ? avatarStorageS3 : avatarStorageGCS;
+    const bucketName =
+      cloudProvider === "aws"
+        ? process.env.AWS_BUCKET_NAME!
+        : process.env.GCP_BUCKET_NAME!;
+    await avatarStorage.putByKey(bucketName, key, newAvatar);
 
     await connection.execute(`UPDATE users SET avatar = ? WHERE id = ?`, [
-      s3Key,
+      key,
       id,
     ]);
 
@@ -94,7 +89,7 @@ export async function PUT(
       {
         success: true,
         data: {
-          avatarUrl: await getImgUrlFromKey(s3Key),
+          avatarUrl: await avatarStorage.getUrlByKey(bucketName, key),
         },
       },
       {
@@ -161,12 +156,13 @@ export async function DELETE(
       });
     }
 
-    const command = new DeleteObjectCommand({
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key: user.avatar,
-    });
-
-    await s3.send(command);
+    const avatarStorage =
+      cloudProvider === "aws" ? avatarStorageS3 : avatarStorageGCS;
+    const bucketName =
+      cloudProvider === "aws"
+        ? process.env.AWS_BUCKET_NAME!
+        : process.env.GCP_BUCKET_NAME!;
+    await avatarStorage.deleteByKey(bucketName, user.avatar);
 
     await connection.execute(`UPDATE users SET avatar = ? WHERE id = ?`, [
       null,

@@ -20,6 +20,12 @@ const Page = async () => {
   }
 
   const { bucketName, numberOfObjects, objects } = data;
+  objects.sort((obj1, obj2) => {
+    return (
+      new Date(obj2.LastModified).getTime() -
+      new Date(obj1.LastModified).getTime()
+    );
+  });
 
   return (
     <>
